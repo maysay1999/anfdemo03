@@ -33,14 +33,14 @@ resource "azurerm_subnet" "default-sub" {
     address_prefixes = [ "172.31.1.0/24" ]
 }
 
-resource "azurerm_subnet" "bation" {
+resource "azurerm_subnet" "bastion" {
   name                 = "AzureBastionSubnet"
   resource_group_name  = local.resource_group_name
-  virtual_network_name = "netapp-vnet"
+  virtual_network_name = azurerm_virtual_network.netapp-vnet.name
   address_prefixes     = ["172.31.3.0/27"]
 }
 
-resource "azurerm_public_ip" "bation" {
+resource "azurerm_public_ip" "bastion" {
   name                = "anfpip"
   location            = local.location
   resource_group_name = local.resource_group_name
@@ -48,15 +48,15 @@ resource "azurerm_public_ip" "bation" {
   sku                 = "Standard"
 }
 
-resource "azurerm_bastion_host" "bation" {
+resource "azurerm_bastion_host" "bastion" {
   name                = "anfbastion"
   location            = local.location
   resource_group_name = local.resource_group_name
 
   ip_configuration {
     name                 = "configuration"
-    subnet_id            = azurerm_subnet.bation.id
-    public_ip_address_id = azurerm_public_ip.bation.id
+    subnet_id            = azurerm_subnet.bastion.id
+    public_ip_address_id = azurerm_public_ip.bastion.id
   }
 }
 
