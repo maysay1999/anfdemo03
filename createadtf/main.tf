@@ -33,7 +33,7 @@ resource "azurerm_subnet" "default-sub" {
     address_prefixes = [ "172.31.1.0/24" ]
 }
 
-resource "azurerm_subnet" "bastion" {
+resource "azurerm_subnet" "AzureBastionSubnet" {
   name                 = "AzureBastionSubnet"
   resource_group_name  = local.resource_group_name
   virtual_network_name = azurerm_virtual_network.netapp-vnet.name
@@ -60,7 +60,9 @@ resource "azurerm_subnet" "bastion" {
 #   }
 # }
 
+##############
 ## Create AD
+##############
 
 module "virtual-machine" {
   source  = "kumarvna/active-directory-forest/azurerm"
