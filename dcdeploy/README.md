@@ -20,7 +20,7 @@ This template will deploy a new VM (along with a new VNet and Load Balancer) and
 ## Deployment
 Click the button below to deploy
 
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2maysay1999%2anfdemo03%2master%2dcdeploy%2Fazuredeploy.json" target="_blank">
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmaysay1999%2Fanfdemo03%2Fmaster%2Fdcdeploy%2Fazuredeploy.json" target="_blank">
     <img src="https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.png"/>
 </a>
 
