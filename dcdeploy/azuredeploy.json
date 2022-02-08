@@ -1,10 +1,10 @@
 {
-    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
         "adminUsername": {
             "type": "string",
-			"defaultValue": "anfadmin",
+            "defaultValue": "anfadmin",
             "metadata": {
                 "description": "The name of the administrator account of the new VM and domain"
             }
@@ -17,7 +17,7 @@
         },
         "domainName": {
             "type": "string",
-			"defaultValue": "azureisfun.local",
+            "defaultValue": "azureisfun.local",
             "metadata": {
                 "description": "The FQDN of the Active Directory Domain to be created"
             }
@@ -54,14 +54,41 @@
     "variables": {
         "virtualNetworkName": "winad-vnet",
         "virtualNetworkAddressRange": "192.168.81.0/24",
-        "winad-nicName": "winad-nic",
-        "winad-nicIPAddress": "192.168.81.0",
-        "winad01Name": "winad01",
-        "winad-subName": "winad-sub",
-        "winad-subAddressPrefix": "192.168.81.0/25",
-        "winad-nsgName": "winad-nsg"
+        "adLBFE": "LBFE",
+        "adLBBE": "LBBE",
+        "adRDPNAT": "winad-edp",
+        "adNicName": "winad-nic",
+        "adNicIPAddress": "192.168.81.4",
+        "adVMName": "winad01",
+        "adSubnetName": "winad-sub",
+        "adSubnetAddressPrefix": "192.168.81.0/25",
+        "publicIPAddressName": "winad-ip",
+        "adAvailabilitySetName": "winad-as",
+        "adLBName": "winad-lb"
     },
     "resources": [
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2017-10-01",
+            "name": "[variables('publicIPAddressName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            }
+        },
+        {
+            "type": "Microsoft.Compute/availabilitySets",
+            "apiVersion": "2017-12-01",
+            "location": "[parameters('location')]",
+            "name": "[variables('adAvailabilitySetName')]",
+            "sku": {
+                "name": "Aligned"
+            },
+            "properties": {
+                "PlatformUpdateDomainCount": 5,
+                "PlatformFaultDomainCount": 2
+            }
+        },
         {
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2018-09-01",
@@ -80,10 +107,10 @@
                         "value": "[variables('virtualNetworkAddressRange')]"
                     },
                     "subnetName": {
-                        "value": "[variables('winad-subName')]"
+                        "value": "[variables('adSubnetName')]"
                     },
                     "subnetRange": {
-                        "value": "[variables('winad-subAddressPrefix')]"
+                        "value": "[variables('adSubnetAddressPrefix')]"
                     },
                     "location": {
                         "value": "[parameters('location')]"
@@ -92,23 +119,40 @@
             }
         },
         {
-            "type": "Microsoft.Network/networkSecurityGroups",
+            "type": "Microsoft.Network/loadBalancers",
             "apiVersion": "2017-10-01",
-            "name": "[variables('winad-nsgName')]",
+            "name": "[variables('adLBName')]",
             "location": "[parameters('location')]",
+            "dependsOn": [
+                "[variables('publicIPAddressName')]"
+            ],
             "properties": {
-                "securityRules": [
+                "frontendIPConfigurations": [
                     {
-                        "name": "default-allow-3389",
+                        "name": "[variables('adLBFE')]",
                         "properties": {
-                            "priority": "1050", 
-                            "access": "Allow",
-                            "direction": "Inbound",
-                            "destinationPortRanges": "3389",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
+                            }
+                        }
+                    }
+                ],
+                "backendAddressPools": [
+                    {
+                        "name": "[variables('adLBBE')]"
+                    }
+                ],
+                "inboundNatRules": [
+                    {
+                        "name": "[variables('adRDPNAT')]",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[resourceId('Microsoft.Network/loadBalancers/frontendIPConfigurations', variables('adLBName'), variables('adLBFE'))]"
+                            },
                             "protocol": "Tcp",
-                            "sourcePortRange": "*",
-                            "sourceAddressPrefix": "*",
-                            "destinationAddressPrefix": "*"
+                            "frontendPort": 3389,
+                            "backendPort": 3389,
+                            "enableFloatingIP": false
                         }
                     }
                 ]
@@ -117,18 +161,32 @@
         {
             "type": "Microsoft.Network/networkInterfaces",
             "apiVersion": "2017-10-01",
-            "name": "[variables('winad-nicName')]",
+            "name": "[variables('adNicName')]",
             "location": "[parameters('location')]",
+            "dependsOn": [
+                "VNet",
+                "[variables('adLBName')]"
+            ],
             "properties": {
                 "ipConfigurations": [
                     {
                         "name": "ipconfig1",
                         "properties": {
                             "privateIPAllocationMethod": "Static",
-                            "privateIPAddress": "[variables('winad-nicIPAddress')]",
+                            "privateIPAddress": "[variables('adNicIPAddress')]",
                             "subnet": {
-                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('winad-subName'))]"
-                            }
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('adSubnetName'))]"
+                            },
+                            "loadBalancerBackendAddressPools": [
+                                {
+                                    "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', variables('adLBName'), variables('adLBBE'))]"
+                                }
+                            ],
+                            "loadBalancerInboundNatRules": [
+                                {
+                                    "id": "[resourceId('Microsoft.Network/loadBalancers/inboundNatRules', variables('adLBName'), variables('adRDPNAT'))]"
+                                }
+                            ]
                         }
                     }
                 ]
@@ -137,14 +195,22 @@
         {
             "type": "Microsoft.Compute/virtualMachines",
             "apiVersion": "2017-12-01",
-            "name": "[variables('winad01Name')]",
+            "name": "[variables('adVMName')]",
             "location": "[parameters('location')]",
+            "dependsOn": [
+                "[variables('adNicName')]",
+                "[variables('adAvailabilitySetName')]",
+                "[variables('adLBName')]"
+            ],
             "properties": {
                 "hardwareProfile": {
                     "vmSize": "[parameters('vmSize')]"
                 },
+                "availabilitySet": {
+                    "id": "[resourceId('Microsoft.Compute/availabilitySets', variables('adAvailabilitySetName'))]"
+                },
                 "osProfile": {
-                    "computerName": "[variables('winad01Name')]",
+                    "computerName": "[variables('adVMName')]",
                     "adminUsername": "[parameters('adminUsername')]",
                     "adminPassword": "[parameters('adminPassword')]"
                 },
@@ -156,7 +222,7 @@
                         "version": "latest"
                     },
                     "osDisk": {
-                        "name": "[concat(variables('winad01Name'),'_OSDisk')]",
+                        "name": "[concat(variables('adVMName'),'_OSDisk')]",
                         "caching": "ReadOnly",
                         "createOption": "FromImage",
                         "managedDisk": {
@@ -165,7 +231,7 @@
                     },
                     "dataDisks": [
                         {
-                            "name": "[concat(variables('winad01Name'), '_DataDisk')]",
+                            "name": "[concat(variables('adVMName'), '_DataDisk')]",
                             "caching": "ReadWrite",
                             "createOption": "Empty",
                             "diskSizeGB": 20,
@@ -179,7 +245,7 @@
                 "networkProfile": {
                     "networkInterfaces": [
                         {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('winad-nicName'))]"
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('adNicName'))]"
                         }
                     ]
                 }
@@ -191,7 +257,7 @@
                     "name": "CreateADForest",
                     "location": "[parameters('location')]",
                     "dependsOn": [
-                        "[variables('winad01Name')]"
+                        "[variables('adVMName')]"
                     ],
                     "properties": {
                         "publisher": "Microsoft.Powershell",
@@ -220,7 +286,7 @@
         },
         {
             "type": "Microsoft.Resources/deployments",
-            "apiVersion": "2021-05-01",
+            "apiVersion": "2018-09-01",
             "name": "UpdateVNetDNS",
             "dependsOn": [
                 "CreateADForest"
@@ -239,14 +305,14 @@
                         "value": "[variables('virtualNetworkAddressRange')]"
                     },
                     "subnetName": {
-                        "value": "[variables('winad-subName')]"
+                        "value": "[variables('adSubnetName')]"
                     },
                     "subnetRange": {
-                        "value": "[variables('winad-subAddressPrefix')]"
+                        "value": "[variables('adSubnetAddressPrefix')]"
                     },
                     "DNSServerAddress": {
                         "value": [
-                            "[variables('winad-nicIPAddress')]"
+                            "[variables('adNicIPAddress')]"
                         ]
                     },
                     "location": {
