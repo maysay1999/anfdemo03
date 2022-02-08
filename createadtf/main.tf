@@ -40,25 +40,25 @@ resource "azurerm_subnet" "bastion" {
   address_prefixes     = ["172.31.3.0/27"]
 }
 
-resource "azurerm_public_ip" "bastion" {
-  name                = "anfpip"
-  location            = local.location
-  resource_group_name = local.resource_group_name
-  allocation_method   = "Static"
-  sku                 = "Standard"
-}
+# resource "azurerm_public_ip" "bastion" {
+#   name                = "anfpip"
+#   location            = local.location
+#   resource_group_name = local.resource_group_name
+#   allocation_method   = "Static"
+#   sku                 = "Standard"
+# }
 
-resource "azurerm_bastion_host" "bastion" {
-  name                = "anfbastion"
-  location            = local.location
-  resource_group_name = local.resource_group_name
+# resource "azurerm_bastion_host" "bastion" {
+#   name                = "anfbastion"
+#   location            = local.location
+#   resource_group_name = local.resource_group_name
 
-  ip_configuration {
-    name                 = "configuration"
-    subnet_id            = azurerm_subnet.bastion.id
-    public_ip_address_id = azurerm_public_ip.bastion.id
-  }
-}
+#   ip_configuration {
+#     name                 = "configuration"
+#     subnet_id            = azurerm_subnet.bastion.id
+#     public_ip_address_id = azurerm_public_ip.bastion.id
+#   }
+# }
 
 ## Create AD
 
