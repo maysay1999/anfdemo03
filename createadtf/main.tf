@@ -69,10 +69,10 @@ module "virtual-machine" {
   version = "2.1.0"
 
   # Resource Group, location, VNet and Subnet details
-  resource_group_name  = "anfdemo-rg"
-  location             = "japaneast"
-  virtual_network_name = "netapp-vnet"
-  subnet_name          = "default-sub"
+  resource_group_name  = local.resource_group_name
+  location             = local.location
+  virtual_network_name = azurerm_virtual_network.netapp-vnet.name
+  subnet_name          = azurerm_subnet.default-sub.name
 
   # This module support multiple Pre-Defined Linux and Windows Distributions.
   # Windows Images: windows2012r2dc, windows2016dc, windows2019dc
