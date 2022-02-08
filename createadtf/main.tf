@@ -49,10 +49,10 @@ module "virtual-machine" {
   version = "2.1.0"
 
   # Resource Group, location, VNet and Subnet details
-  resource_group_name  = local.resource_group_name
-  location             = local.location
-  virtual_network_name = azurerm_virtual_network.netapp-vnet.name
-  subnet_name          = azurerm_subnet.default-sub.name
+  resource_group_name  = "anfdemo-rg"
+  location             = "japaneast"
+  virtual_network_name = "netapp-vnet"
+  subnet_name          = "default-sub"
 
   # This module support multiple Pre-Defined Linux and Windows Distributions.
   # Windows Images: windows2012r2dc, windows2016dc, windows2019dc
@@ -99,25 +99,3 @@ module "virtual-machine" {
     Env          = "dev"
   }
 }
-
-# Bastion
-
-# resource "azurerm_public_ip" "bastion" {
-#   name                = "anfpip"
-#   location            = local.location
-#   resource_group_name = local.resource_group_name
-#   allocation_method   = "Static"
-#   sku                 = "Standard"
-# }
-
-# resource "azurerm_bastion_host" "bastion" {
-#   name                = "anfbastion"
-#   location            = local.location
-#   resource_group_name = local.resource_group_name
-
-#   ip_configuration {
-#     name                 = "configuration"
-#     subnet_id            = azurerm_subnet.bastion.id
-#     public_ip_address_id = azurerm_public_ip.bastion.id
-#   }
-# }
