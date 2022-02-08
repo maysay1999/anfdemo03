@@ -24,7 +24,7 @@
         },
         "vmSize": {
             "type": "string",
-            "defaultValue": "Standard_DS2s_v3",
+            "defaultValue": "Standard_DS2_v2",
             "metadata": {
                 "description": "Size of the VM for the controller"
             }
@@ -58,7 +58,8 @@
         "winad-nicIPAddress": "192.168.81.0",
         "winad01Name": "winad01",
         "winad-subName": "winad-sub",
-        "winad-subAddressPrefix": "192.168.81.0/25"
+        "winad-subAddressPrefix": "192.168.81.0/25",
+        "winad-nsgName": "winad-nsg"
     },
     "resources": [
         {
@@ -88,6 +89,29 @@
                         "value": "[parameters('location')]"
                     }
                 }
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2017-10-01",
+            "name": "[variables('winad-nsgName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "default-allow-3389",
+                        "properties": {
+                            "priority": "1050", 
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "destinationPortRanges": "3389",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*"
+                        }
+                    }
+                ]
             }
         },
         {
