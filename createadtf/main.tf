@@ -33,12 +33,12 @@ resource "azurerm_subnet" "default-sub" {
     address_prefixes = [ "172.31.1.0/24" ]
 }
 
-resource "azurerm_subnet" "AzureBastionSubnet" {
-  name                 = "AzureBastionSubnet"
-  resource_group_name  = local.resource_group_name
-  virtual_network_name = azurerm_virtual_network.netapp-vnet.name
-  address_prefixes     = ["172.31.3.0/27"]
-}
+# resource "azurerm_subnet" "AzureBastionSubnet" {
+#   name                 = "AzureBastionSubnet"
+#   resource_group_name  = local.resource_group_name
+#   virtual_network_name = 
+#   address_prefixes     = ["172.31.3.0/27"]
+# }
 
 ##############
 ## Create AD
