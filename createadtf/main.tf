@@ -67,7 +67,7 @@ module "virtual-machine" {
   version = "2.1.0"
 
   # Resource Group, location, VNet and Subnet details
-  resource_group_name  = "meiseit.rg"
+  resource_group_name  = "anfdemo-rg"
   location             = "japaneast"
   virtual_network_name = "netapp-vnet"
   subnet_name          = "default-sub"
