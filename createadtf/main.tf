@@ -12,34 +12,6 @@ provider "azurerm" {
   features {}
 }
 
-# locals
-locals {
-  resource_group_name = "anfdemo-rg"
-  location = "Japan East"
-}
-
-# Create VNET, submnet and bastion
-resource "azurerm_virtual_network" "netapp-vnet" {
-    name = "netapp-vnet"
-    resource_group_name = local.resource_group_name
-    location = local.location
-    address_space = [ "172.31.0.0/16" ]
-}
-
-resource "azurerm_subnet" "default-sub" {
-    name = "default-sub"
-    resource_group_name = local.resource_group_name
-    virtual_network_name = azurerm_virtual_network.netapp-vnet.name
-    address_prefixes = [ "172.31.1.0/24" ]
-}
-
-# resource "azurerm_subnet" "AzureBastionSubnet" {
-#   name                 = "AzureBastionSubnet"
-#   resource_group_name  = local.resource_group_name
-#   virtual_network_name = 
-#   address_prefixes     = ["172.31.3.0/27"]
-# }
-
 ##############
 ## Create AD
 ##############
@@ -60,7 +32,7 @@ module "virtual-machine" {
   windows_distribution_name          = "windows2019dc"
   virtual_machine_size               = "Standard_D2s_v3"
   admin_username                     = "anfadmin"
-  admin_password                     = "Password123#"
+  admin_password                     = ""
   private_ip_address_allocation_type = "Static"
   private_ip_address                 = ["172.31.1.4"]
 
