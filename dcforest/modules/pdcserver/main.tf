@@ -243,7 +243,7 @@ SETTINGS
 }
 
 #---------------------------------------
-# Win 10 
+# Win 10 client
 #---------------------------------------
 resource "azurerm_network_security_group" "win10" {
     name                = "win10-nsg"
@@ -305,7 +305,7 @@ resource "azurerm_windows_virtual_machine" "win10" {
 }
 
 #---------------------------------------
-# Ubuntu 20 
+# Ubuntu client
 #---------------------------------------
 resource "azurerm_network_security_group" "ubuntu" {
     name                = "ubuntu-nsg"
@@ -365,4 +365,29 @@ resource "azurerm_linux_virtual_machine" "ubuntu" {
     sku       = "20_04-lts-gen2"
     version   = "latest"
   }
+}
+
+#---------------------------------------
+# peering 
+#---------------------------------------
+resource "azurerm_virtual_network_peering" "peering-1" {
+  name                      = "peer1to2"
+  resource_group_name       = data.azurerm_resource_group.rg.name
+  virtual_network_name      = azurerm_virtual_network.vnet.name
+  remote_virtual_network_id = azurerm_virtual_network.vnet2.id
+}
+
+resource "azurerm_virtual_network_peering" "peering-2" {
+  name                      = "peer2to1"
+  resource_group_name       = data.azurerm_resource_group.rg.name
+  virtual_network_name      = azurerm_virtual_network.vnet2.name
+  remote_virtual_network_id = azurerm_virtual_network.vnet.id
+}
+
+#---------------------------------------
+# DNS
+#---------------------------------------
+resource "azurerm_virtual_network_dns_servers" "dnsip" {
+  virtual_network_id = azurerm_virtual_network.vnet2.id
+  dns_servers        = ["192.168.81.4", "168.63.129.16"]
 }
