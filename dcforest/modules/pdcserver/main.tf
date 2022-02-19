@@ -306,7 +306,8 @@ resource "azurerm_linux_virtual_machine" "ubuntu" {
   location            = local.location
   size                = "Standard_D2s_v3"
   admin_username      = var.admin_username
-  admin_password      = var.admin_password == null ? element(concat(random_password.passwd.*.result, [""]), 0) : var.admin_password
+  disable_password_authentication = false
+  admin_password = var.admin_password == null ? element(concat(random_password.passwd.*.result, [""]), 0) : var.admin_password
   network_interface_ids = [
     azurerm_network_interface.ubuntu.id,
   ]
