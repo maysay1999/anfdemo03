@@ -283,7 +283,7 @@ resource "azurerm_network_interface_security_group_association" "win10" {
 resource "azurerm_windows_virtual_machine" "win10" {
   name                = "win10-client"
   resource_group_name = data.azurerm_resource_group.rg.name
-  location            = local.location
+  location            = data.azurerm_resource_group.rg.location
   size                = "Standard_D2s_v3"
   admin_username      = var.admin_username
   admin_password      = var.admin_password == null ? element(concat(random_password.passwd.*.result, [""]), 0) : var.admin_password
@@ -327,7 +327,7 @@ resource "azurerm_network_security_group" "ubuntu" {
 
 resource "azurerm_network_interface" "ubuntu" {
   name                = "ubuntu-nic"
-  location            = local.location
+  location            = data.azurerm_resource_group.rg.location
   resource_group_name = data.azurerm_resource_group.rg.name
 
   ip_configuration {
