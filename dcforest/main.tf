@@ -1,24 +1,9 @@
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "=2.91.0"
-    }
-  }
-}
-
-# Configure the Microsoft Azure Provider
-provider "azurerm" {
-  features {}
-}
-
 ##############
 ## Create AD
 ##############
 
 module "virtual-machine" {
-  source  = "./module/pdcserver/"
-  version = "2.1.0"
+  source  = "./modules/pdcserver"
 
   # Resource Group, location, VNet and Subnet details
   resource_group_name  = "anfdemo-rg"
@@ -32,9 +17,10 @@ module "virtual-machine" {
   windows_distribution_name          = "windows2019dc"
   virtual_machine_size               = "Standard_D2s_v3"
   admin_username                     = "anfadmin"
+  ### Must put the password here!!!
   admin_password                     = ""
   private_ip_address_allocation_type = "Static"
-  private_ip_address                 = ["172.31.1.4"]
+  private_ip_address                 = ["192.168.81.4"]
 
   # Active Directory domain and netbios details
   # Intended for test/demo purposes
@@ -50,24 +36,18 @@ module "virtual-machine" {
     {
       name                   = "rdp"
       destination_port_range = "3389"
-      source_address_prefix  = "172.31.0.0/16"
-      priority = "320"
-      access = "Allow"
-      protocol = "Tcp"
-      direction = "Inbound"
-    },
-
-    # {
-    #   name                   = "dns"
-    #   destination_port_range = "53"
-    #   source_address_prefix  = "*"
-    # },
+      source_address_prefix  = "192.168.80.0/22"
+      priority               = "320"
+      access                 = "Allow"
+      protocol               = "Tcp"
+      direction              = "Inbound"
+    }
   ]
 
   # Adding TAG's to your Azure resources (Required)
   # ProjectName and Env are already declared above, to use them here, create a varible.
   tags = {
-    ProjectName  = "hands-on Evaluation"
-    Env          = "dev"
+    ProjectName = "ANF hands-on demo"
+    Env         = "Demo lab"
   }
 }

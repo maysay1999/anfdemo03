@@ -20,19 +20,54 @@ locals {
 #----------------------------------------------------------
 # Resource Group, VNet, Subnet selection & Random Resources
 #----------------------------------------------------------
+
+locals {
+  location = "japaneast"
+}
+
 data "azurerm_resource_group" "rg" {
   name = var.resource_group_name
 }
 
-data "azurerm_virtual_network" "vnet" {
+resource "azurerm_virtual_network" "vnet" {
   name                = var.virtual_network_name
+  address_space       = [ "192.168.80.0/22" ]
   resource_group_name = data.azurerm_resource_group.rg.name
+  location            = local.location
 }
 
-data "azurerm_subnet" "snet" {
+resource "azurerm_subnet" "snet" {
   name                 = var.subnet_name
-  virtual_network_name = data.azurerm_virtual_network.vnet.name
   resource_group_name  = data.azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = [ "192.168.81.0/24" ]
+}
+
+resource "azurerm_subnet" "bastion" {
+  name = "AzureBastionSubnet"
+  resource_group_name  = data.azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = [ "192.168.82.0/27" ]
+}
+
+resource "azurerm_public_ip" "bastion" {
+  name                = "bastionip"
+  resource_group_name = data.azurerm_resource_group.rg.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  location            = local.location
+}
+
+resource "azurerm_bastion_host" "bastion" {
+  name                = "dcbastion"
+  resource_group_name = data.azurerm_resource_group.rg.name
+  location            = local.location
+
+  ip_configuration {
+    name                 = "bastionconf"
+    subnet_id            = azurerm_subnet.bastion.id
+    public_ip_address_id = azurerm_public_ip.bastion.id
+  }
 }
 
 resource "random_password" "passwd" {
@@ -88,7 +123,7 @@ resource "azurerm_network_interface" "nic" {
   ip_configuration {
     name                          = lower("ipconig-${format("vm%s%s", lower(replace(var.virtual_machine_name, "/[[:^alnum:]]/", "")), count.index + 1)}")
     primary                       = true
-    subnet_id                     = data.azurerm_subnet.snet.id
+    subnet_id                     = azurerm_subnet.snet.id
     private_ip_address_allocation = var.private_ip_address_allocation_type
     private_ip_address            = var.private_ip_address_allocation_type == "Static" ? element(concat(var.private_ip_address, [""]), count.index) : null
     public_ip_address_id          = var.enable_public_ip_address == true ? element(concat(azurerm_public_ip.pip.*.id, [""]), count.index) : null
@@ -126,7 +161,7 @@ resource "azurerm_network_security_rule" "nsg_rule" {
   source_port_range           = "*"
   destination_port_range      = each.value.security_rule.destination_port_range
   source_address_prefix       = each.value.security_rule.source_address_prefix
-  destination_address_prefix  = element(concat(data.azurerm_subnet.snet.address_prefixes, [""]), 0)
+  destination_address_prefix  = element(concat(azurerm_subnet.snet.address_prefixes, [""]), 0)
   description                 = "Inbound_Port_${each.value.security_rule.destination_port_range}"
   resource_group_name         = data.azurerm_resource_group.rg.name
   network_security_group_name = azurerm_network_security_group.nsg.name
