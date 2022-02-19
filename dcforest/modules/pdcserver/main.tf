@@ -265,7 +265,7 @@ resource "azurerm_network_security_group" "win10" {
 
 resource "azurerm_network_interface" "win10" {
   name                = "win10-nic"
-  location            = local.location
+  location            = data.azurerm_resource_group.rg.location
   resource_group_name = data.azurerm_resource_group.rg.name
 
   ip_configuration {
@@ -345,7 +345,7 @@ resource "azurerm_network_interface_security_group_association" "ubuntu" {
 resource "azurerm_linux_virtual_machine" "ubuntu" {
   name                = "ubuntu"
   resource_group_name = data.azurerm_resource_group.rg.name
-  location            = local.location
+  location            = data.azurerm_resource_group.rg.location
   size                = "Standard_D2s_v3"
   admin_username      = var.admin_username
   disable_password_authentication = false
