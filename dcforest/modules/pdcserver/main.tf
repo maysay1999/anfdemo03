@@ -21,10 +21,6 @@ locals {
 # Resource Group, VNet, Subnet selection & Random Resources
 #----------------------------------------------------------
 
-locals {
-  location = "japaneast"
-}
-
 data "azurerm_resource_group" "rg" {
   name = var.resource_group_name
 }
@@ -33,7 +29,7 @@ resource "azurerm_virtual_network" "vnet" {
   name                = var.virtual_network_name
   address_space       = [ "192.168.80.0/22" ]
   resource_group_name = data.azurerm_resource_group.rg.name
-  location            = local.location
+  location            = data.azurerm_resource_group.rg.location
 }
 
 resource "azurerm_subnet" "snet" {
@@ -47,7 +43,7 @@ resource "azurerm_virtual_network" "vnet2" {
   name                = var.virtual_network_name2
   address_space       = [ "172.28.80.0/22" ]
   resource_group_name = data.azurerm_resource_group.rg.name
-  location            = local.location
+  location            = data.azurerm_resource_group.rg.location
 }
 
 resource "azurerm_subnet" "snet2" {
@@ -72,13 +68,13 @@ resource "azurerm_public_ip" "bastion" {
   resource_group_name = data.azurerm_resource_group.rg.name
   allocation_method   = "Static"
   sku                 = "Standard"
-  location            = local.location
+  location            = data.azurerm_resource_group.rg.location
 }
 
 resource "azurerm_bastion_host" "bastion" {
   name                = "dcbastion"
   resource_group_name = data.azurerm_resource_group.rg.name
-  location            = local.location
+  location            = data.azurerm_resource_group.rg.location
 
   ip_configuration {
     name                 = "bastionconf"
@@ -249,6 +245,24 @@ SETTINGS
 #---------------------------------------
 # Win 10 
 #---------------------------------------
+resource "azurerm_network_security_group" "win10" {
+    name                = "win10-nsg"
+    location            = data.azurerm_resource_group.rg.location
+    resource_group_name = data.azurerm_resource_group.rg.name
+
+    security_rule {
+        name                       = "RDP"
+        priority                   = 1100
+        direction                  = "Inbound"
+        access                     = "Allow"
+        protocol                   = "Tcp"
+        source_port_range          = "*"
+        destination_port_range     = "3389"
+        source_address_prefix      = "*"
+        destination_address_prefix = "*"
+    }
+}
+
 resource "azurerm_network_interface" "win10" {
   name                = "win10-nic"
   location            = local.location
@@ -259,6 +273,11 @@ resource "azurerm_network_interface" "win10" {
     subnet_id                     = azurerm_subnet.snet2.id
     private_ip_address_allocation = "Dynamic"
   }
+}
+
+resource "azurerm_network_interface_security_group_association" "win10" {
+    network_interface_id      = azurerm_network_interface.win10.id
+    network_security_group_id = azurerm_network_security_group.win10.id
 }
 
 resource "azurerm_windows_virtual_machine" "win10" {
@@ -288,6 +307,24 @@ resource "azurerm_windows_virtual_machine" "win10" {
 #---------------------------------------
 # Ubuntu 20 
 #---------------------------------------
+resource "azurerm_network_security_group" "ubuntu" {
+    name                = "ubuntu-nsg"
+    location            = data.azurerm_resource_group.rg.location
+    resource_group_name = data.azurerm_resource_group.rg.name
+
+    security_rule {
+        name                       = "SSH"
+        priority                   = 1100
+        direction                  = "Inbound"
+        access                     = "Allow"
+        protocol                   = "Tcp"
+        source_port_range          = "*"
+        destination_port_range     = "22"
+        source_address_prefix      = "*"
+        destination_address_prefix = "*"
+    }
+}
+
 resource "azurerm_network_interface" "ubuntu" {
   name                = "ubuntu-nic"
   location            = local.location
@@ -298,6 +335,11 @@ resource "azurerm_network_interface" "ubuntu" {
     subnet_id                     = azurerm_subnet.snet2.id
     private_ip_address_allocation = "Dynamic"
   }
+}
+
+resource "azurerm_network_interface_security_group_association" "ubuntu" {
+    network_interface_id      = azurerm_network_interface.ubuntu.id
+    network_security_group_id = azurerm_network_security_group.ubuntu.id
 }
 
 resource "azurerm_linux_virtual_machine" "ubuntu" {
