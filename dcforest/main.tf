@@ -6,14 +6,16 @@ module "virtual-machine" {
   source  = "./modules/pdcserver"
 
   # Resource Group, location, VNet and Subnet details
-  resource_group_name  = "anfdemo-rg"
+  resource_group_name  = "ANFLab-RG"
   location             = "japaneast"
   virtual_network_name = "netapp-vnet"
   subnet_name          = "default-sub"
+  virtual_network_name2 = "anfjpe-vnet"
+  subnet_name2          = "vm-sub"
 
   # This module support multiple Pre-Defined Linux and Windows Distributions.
   # Windows Images: windows2012r2dc, windows2016dc, windows2019dc
-  virtual_machine_name               = "wintestdc01"
+  virtual_machine_name               = "windc01"
   windows_distribution_name          = "windows2019dc"
   virtual_machine_size               = "Standard_D2s_v3"
   admin_username                     = "anfadmin"

@@ -43,6 +43,23 @@ resource "azurerm_subnet" "snet" {
   address_prefixes     = [ "192.168.81.0/24" ]
 }
 
+resource "azurerm_virtual_network" "vnet2" {
+  name                = var.virtual_network_name2
+  address_space       = [ "172.28.80.0/22" ]
+  resource_group_name = data.azurerm_resource_group.rg.name
+  location            = local.location
+}
+
+resource "azurerm_subnet" "snet2" {
+  name                 = var.subnet_name2
+  resource_group_name  = data.azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.vnet2.name
+  address_prefixes     = [ "172.28.81.0/24" ]
+}
+
+#---------------------------------------
+# Bastion, bastion IP and bastion host
+#---------------------------------------
 resource "azurerm_subnet" "bastion" {
   name = "AzureBastionSubnet"
   resource_group_name  = data.azurerm_resource_group.rg.name
@@ -94,7 +111,7 @@ resource "random_string" "str" {
 }
 
 #-----------------------------------
-# Public IP for Virtual Machine
+# Public IP for PDC Virtual Machine
 #-----------------------------------
 resource "azurerm_public_ip" "pip" {
   count               = var.enable_public_ip_address == true ? var.instances_count : 0
@@ -108,7 +125,7 @@ resource "azurerm_public_ip" "pip" {
 }
 
 #---------------------------------------
-# Network Interface for Virtual Machine
+# Network Interface for PDC Virtual Machine
 #---------------------------------------
 resource "azurerm_network_interface" "nic" {
   count                         = var.instances_count
@@ -175,7 +192,7 @@ resource "azurerm_network_interface_security_group_association" "nsgassoc" {
 }
 
 #---------------------------------------
-# Windows Virutal machine
+# PDC Windows Virutal machine
 #---------------------------------------
 resource "azurerm_windows_virtual_machine" "win_vm" {
   count                      = var.os_flavor == "windows" ? var.instances_count : 0
@@ -227,4 +244,82 @@ resource "azurerm_virtual_machine_extension" "adforest" {
         "commandToExecute": "powershell.exe -Command \"${local.powershell_command}\""
     }
 SETTINGS
+}
+
+#---------------------------------------
+# Win 10 
+#---------------------------------------
+resource "azurerm_network_interface" "win10" {
+  name                = "win10-nic"
+  location            = local.location
+  resource_group_name = data.azurerm_resource_group.rg.name
+
+  ip_configuration {
+    name                          = "win10-ip"
+    subnet_id                     = azurerm_subnet.snet2.id
+    private_ip_address_allocation = "Dynamic"
+  }
+}
+
+resource "azurerm_windows_virtual_machine" "win10" {
+  name                = "win10-client"
+  resource_group_name = data.azurerm_resource_group.rg.name
+  location            = local.location
+  size                = "Standard_D2s_v3"
+  admin_username      = var.admin_username
+  admin_password      = var.admin_password == null ? element(concat(random_password.passwd.*.result, [""]), 0) : var.admin_password
+  network_interface_ids = [
+    azurerm_network_interface.win10.id,
+  ]
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "MicrosoftWindowsDesktop"
+    offer     = "Windows-10"
+    sku       = "win10-21h2-pro"
+    version   = "latest"
+  }
+}
+
+#---------------------------------------
+# Ubuntu 20 
+#---------------------------------------
+resource "azurerm_network_interface" "ubuntu" {
+  name                = "ubuntu-nic"
+  location            = local.location
+  resource_group_name = data.azurerm_resource_group.rg.name
+
+  ip_configuration {
+    name                          = "ubuntu-ip"
+    subnet_id                     = azurerm_subnet.snet2.id
+    private_ip_address_allocation = "Dynamic"
+  }
+}
+
+resource "azurerm_linux_virtual_machine" "ubuntu" {
+  name                = "ubuntu"
+  resource_group_name = data.azurerm_resource_group.rg.name
+  location            = local.location
+  size                = "Standard_D2s_v3"
+  admin_username      = var.admin_username
+  admin_password      = var.admin_password == null ? element(concat(random_password.passwd.*.result, [""]), 0) : var.admin_password
+  network_interface_ids = [
+    azurerm_network_interface.ubuntu.id,
+  ]
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "canonical"
+    offer     = "0001-com-ubuntu-server-focal"
+    sku       = "20_04-lts-gen2"
+    version   = "latest"
+  }
 }

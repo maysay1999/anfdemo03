@@ -13,9 +13,19 @@ variable "virtual_network_name" {
   default     = ""
 }
 
+variable "virtual_network_name2" {
+  description = "The name of the virtual network"
+  default     = "client-vnet"
+}
+
 variable "subnet_name" {
   description = "The name of the subnet to use in VM scale set"
   default     = ""
+}
+
+variable "subnet_name2" {
+  description = "The name of the subnet to use in VM scale set"
+  default     = "client-sub"
 }
 
 variable "virtual_machine_name" {
@@ -133,11 +143,11 @@ variable "os_disk_storage_account_type" {
 
 variable "admin_username" {
   description = "The username of the local administrator used for the Virtual Machine."
-  default     = "azureadmin"
+  default     = "anfadmin"
 }
 
 variable "admin_password" {
-  description = "The Password which should be used for the local-administrator on this Virtual Machine"
+  description = "Put your password here. The Password which should be used for the local-administrator on this Virtual Machine"
   default     = null
 }
 
